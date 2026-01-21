@@ -32,7 +32,7 @@ const createApplication = async (req, res) => {
       });
     }
 
-    const studentDetails  = await Student.findOne({ pnr: studentPNR }).lean();
+    const studentDetails = await Student.findOne({ pnr: studentPNR }).lean();
     if (!studentDetails) {
       return res.status(404).json({
         success: false,
@@ -141,7 +141,7 @@ const getAllApplications = async (req, res) => {
 // @access  Private
 const getApplicationById = async (req, res) => {
   try {
-    const application = await Application.findById(req.params.id)
+    const application = await Application.find({ studentPNR: req.params.id })
       .populate("hostelId")
       .populate("studentId");
 
