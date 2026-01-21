@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hostel-management';
+    const mongoURI = 'mongodb+srv://sopanmasure_db_user:wishtree@cluster0.hu1i3la.mongodb.net/?appName=Cluster0';
     
     await mongoose.connect(mongoURI);
 
