@@ -56,6 +56,11 @@ const hostelSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin',
+      required: true,
+    },
     isActive: {
       type: Boolean,
       default: true,

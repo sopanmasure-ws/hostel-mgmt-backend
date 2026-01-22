@@ -28,9 +28,10 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/hostels', require('./routes/hostelRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/', (req, res) => {
   res.json({ status: 'OK', message: 'Hostel Management Backend is running' });
 });
 
