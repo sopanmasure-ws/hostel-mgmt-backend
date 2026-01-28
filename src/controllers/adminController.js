@@ -202,9 +202,6 @@ const getHostelApplications = async (req, res) => {
   }
 };
 
-// @route   PUT /api/admin/applications/:applicationId/accept
-// @desc    Accept an application and assign room
-// @access  Public (for now)
 const acceptApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
