@@ -173,7 +173,7 @@ const updateApplicationStatus = async (req, res) => {
 
     if (
       !status ||
-      !["Pending", "Approved", "Rejected", "Cancelled"].includes(status)
+      !["PENDING", "APPROVED", "REJECTED", "CANCELLED"].includes(status.toUpperCase())
     ) {
       return res.status(400).json({
         success: false,
@@ -188,7 +188,7 @@ const updateApplicationStatus = async (req, res) => {
         roomNumber: roomNumber || "",
         floor: floor || "",
         rejectionReason: rejectionReason || "",
-        approvedOn: status === "Approved" ? new Date() : null,
+        approvedOn: status === "APPROVED" ? new Date() : null,
       },
       { new: true, runValidators: true },
     );

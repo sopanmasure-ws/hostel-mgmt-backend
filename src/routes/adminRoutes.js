@@ -22,8 +22,8 @@ router.get('/:adminId/hostels', getAdminHostels);
 
 // Application Routes
 router.get('/hostels/:hostelId/applications', getHostelApplications);
-router.put('/applications/:applicationId/accept', acceptApplication);
-router.put('/applications/:applicationId/reject', rejectApplication);
+router.put('/applications/:applicationId/APPROVED', acceptApplication);
+router.put('/applications/:applicationId/REJECTED', rejectApplication);
 
 // Inventory Routes
 router.get('/hostels/:hostelId/inventory', getHostelInventory);

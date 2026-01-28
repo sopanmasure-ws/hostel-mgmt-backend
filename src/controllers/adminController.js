@@ -227,7 +227,7 @@ const acceptApplication = async (req, res) => {
       });
     }
 
-    if (application.status !== 'Pending') {
+    if (application.status.toUpperCase() !== 'PENDING') {
       return res.status(400).json({
         success: false,
         message: 'Application has already been processed',
@@ -256,7 +256,7 @@ const acceptApplication = async (req, res) => {
     }
 
     // Update application
-    application.status = 'Approved';
+    application.status = 'APPROVED';
     application.approvedOn = new Date();
     application.roomNumber = roomNumber;
     application.floor = floor;
@@ -287,9 +287,6 @@ const acceptApplication = async (req, res) => {
   }
 };
 
-// @route   PUT /api/admin/applications/:applicationId/reject
-// @desc    Reject an application with reason
-// @access  Public (for now)
 const rejectApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -312,7 +309,7 @@ const rejectApplication = async (req, res) => {
       });
     }
 
-    if (application.status !== 'Pending') {
+    if (application.status.toUpperCase() !== 'PENDING') {
       return res.status(400).json({
         success: false,
         message: 'Application has already been processed',
@@ -320,7 +317,7 @@ const rejectApplication = async (req, res) => {
     }
 
     // Update application
-    application.status = 'Rejected';
+    application.status = 'REJECTED';
     application.rejectionReason = rejectionReason;
     await application.save();
 
