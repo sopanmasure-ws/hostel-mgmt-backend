@@ -13,6 +13,14 @@ connectDB();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+app.use(cors({
+  origin: [
+    'http://localhost:5174',           // local dev (Vite)
+    'http://localhost:3000',
+    'https://hostel-management-fe.netlify.app'
+  ],
+  credentials: true,
+}));
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || 'http://localhost:5174',
