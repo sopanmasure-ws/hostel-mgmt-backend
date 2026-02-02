@@ -40,6 +40,11 @@ const adminSchema = new mongoose.Schema(
         ref: 'Hostel',
       },
     ],
+    role: {
+      type: String,
+      enum: ['admin', 'superadmin'],
+      default: 'admin',
+    },
     isActive: {
       type: Boolean,
       default: true,

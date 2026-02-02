@@ -10,10 +10,13 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', getAllHostels);
-router.get('/:id', getHostelById);
-router.post('/', createHostel);
-router.put('/:id', updateHostel);
-router.delete('/:id', deleteHostel);
+// All hostel APIs require auth
+router.get('/', protect, authorize('student', 'admin', 'superadmin'), getAllHostels);
+router.get('/:id', protect, authorize('student', 'admin', 'superadmin'), getHostelById);
+
+// Super admin hostel management
+router.post('/', protect, authorize('superadmin'), createHostel);
+router.put('/:id', protect, authorize('superadmin'), updateHostel);
+router.delete('/:id', protect, authorize('superadmin'), deleteHostel);
 
 module.exports = router;

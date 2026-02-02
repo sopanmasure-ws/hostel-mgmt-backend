@@ -5,9 +5,16 @@ const Room = require('../models/Room');
 const Student = require('../models/Student');
 const jwt = require('jsonwebtoken');
 
+const canAccessHostel = (user, hostelId) => {
+  if (!user) return false;
+  if (user.role === 'superadmin') return true;
+  if (!Array.isArray(user.hostelIds)) return false;
+  return user.hostelIds.map((id) => id.toString()).includes(hostelId.toString());
+};
+
 // Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
+const generateToken = ({ id, role, type }) => {
+  return jwt.sign({ id, role, type }, process.env.JWT_SECRET || 'your-secret-key', {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 };
@@ -54,7 +61,7 @@ const register = async (req, res) => {
       hostelIds: [],
     });
 
-    const token = generateToken(admin._id);
+    const token = generateToken({ id: admin._id, role: admin.role, type: 'admin' });
 
     return res.status(201).json({
       success: true,
@@ -114,7 +121,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(admin._id);
+    const token = generateToken({ id: admin._id, role: admin.role, type: 'admin' });
 
     return res.status(200).json({
       success: true,
@@ -139,8 +146,18 @@ const getAdminHostels = async (req, res) => {
   try {
     const { adminId } = req.params;
 
-    // Find admin by adminId (the string ID)
-    const admin = await Admin.findOne({ adminId }).populate('hostelIds');
+    // Admins can only view their own hostels; superadmin can view any admin
+    if (req.user.role === 'admin' && req.user.adminId !== adminId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view other admin hostels',
+      });
+    }
+
+    const admin =
+      req.user.role === 'admin'
+        ? await Admin.findById(req.user._id).populate('hostelIds')
+        : await Admin.findOne({ adminId }).populate('hostelIds');
 
     if (!admin) {
       return res.status(404).json({
@@ -171,6 +188,13 @@ const getHostelApplications = async (req, res) => {
   try {
     const { hostelId } = req.params;
     const { status, studentYear } = req.query;
+
+    if (!canAccessHostel(req.user, hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access this hostel',
+      });
+    }
 
     let query = { hostelId };
 
@@ -228,6 +252,13 @@ const acceptApplication = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Application has already been processed',
+      });
+    }
+
+    if (!canAccessHostel(req.user, application.hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to process applications for this hostel',
       });
     }
 
@@ -313,6 +344,13 @@ const rejectApplication = async (req, res) => {
       });
     }
 
+    if (!canAccessHostel(req.user, application.hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to process applications for this hostel',
+      });
+    }
+
     // Update application
     application.status = 'REJECTED';
     application.rejectionReason = rejectionReason;
@@ -340,6 +378,13 @@ const getHostelInventory = async (req, res) => {
   try {
     const { hostelId } = req.params;
     const { floor, status } = req.query;
+
+    if (!canAccessHostel(req.user, hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access this hostel',
+      });
+    }
 
     // Verify hostel exists
     const hostel = await Hostel.findById(hostelId);
@@ -426,6 +471,13 @@ const getHostelRooms = async (req, res) => {
     const { hostelId } = req.params;
     const { floor, status } = req.query;
 
+    if (!canAccessHostel(req.user, hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access this hostel',
+      });
+    }
+
     let query = { hostelId };
 
     if (floor) {
@@ -485,6 +537,13 @@ const updateRoomStatus = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Room not found',
+      });
+    }
+
+    if (!canAccessHostel(req.user, room.hostelId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update rooms for this hostel',
       });
     }
 

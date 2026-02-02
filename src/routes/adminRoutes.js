@@ -10,12 +10,17 @@ const {
   getHostelRooms,
   updateRoomStatus,
 } = require('../controllers/adminController');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Admin Auth Routes
-router.post('/register', register);
 router.post('/login', login);
+// Only superadmin can create admins via this endpoint (preferred: POST /api/superadmin/admins)
+router.post('/register', protect, authorize('superadmin'), register);
+
+// All routes below require admin/superadmin token
+router.use(protect, authorize('admin', 'superadmin'));
 
 // Hostel Routes
 router.get('/:adminId/hostels', getAdminHostels);

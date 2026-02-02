@@ -1,4 +1,6 @@
 const Hostel = require('../models/Hostel');
+const Admin = require('../models/Admin');
+const Room = require('../models/Room');
 
 // @route   GET /api/hostels
 // @desc    Get all hostels
@@ -51,12 +53,20 @@ const getHostelById = async (req, res) => {
 // @access  Private
 const createHostel = async (req, res) => {
   try {
-    const { name, location, capacity, gender, amenities, rules } = req.body;
+    const { name, location, capacity, gender, amenities, rules, adminId, availableRooms } = req.body;
 
-    if (!name || !location || !capacity || !gender) {
+    if (!name || !location || !capacity || !gender || !adminId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields',
+        message: 'Please provide all required fields (name, location, capacity, gender, adminId)',
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found for provided adminId',
       });
     }
 
@@ -65,10 +75,14 @@ const createHostel = async (req, res) => {
       location,
       capacity,
       gender,
-      availableRooms: capacity,
+      availableRooms: typeof availableRooms === 'number' ? availableRooms : capacity,
       amenities: amenities || [],
       rules: rules || [],
+      adminId: admin._id,
     });
+
+    // Keep Admin.hostelIds in sync
+    await Admin.updateOne({ _id: admin._id }, { $addToSet: { hostelIds: hostel._id } });
 
     return res.status(201).json({
       success: true,
@@ -95,6 +109,19 @@ const updateHostel = async (req, res) => {
         success: false,
         message: 'Hostel not found',
       });
+    }
+
+    // If adminId is being changed, sync hostelIds lists
+    if (req.body.adminId && req.body.adminId.toString() !== hostel.adminId.toString()) {
+      const newAdmin = await Admin.findById(req.body.adminId);
+      if (!newAdmin) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin not found for provided adminId',
+        });
+      }
+      await Admin.updateOne({ _id: hostel.adminId }, { $pull: { hostelIds: hostel._id } });
+      await Admin.updateOne({ _id: newAdmin._id }, { $addToSet: { hostelIds: hostel._id } });
     }
 
     hostel = await Hostel.findByIdAndUpdate(req.params.id, req.body, {
@@ -128,6 +155,11 @@ const deleteHostel = async (req, res) => {
         message: 'Hostel not found',
       });
     }
+
+    // Remove rooms for this hostel
+    await Room.deleteMany({ hostelId: hostel._id });
+    // Remove hostel reference from admin
+    await Admin.updateOne({ _id: hostel.adminId }, { $pull: { hostelIds: hostel._id } });
 
     await Hostel.findByIdAndDelete(req.params.id);
 

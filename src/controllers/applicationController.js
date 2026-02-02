@@ -1,5 +1,4 @@
 const Application = require("../models/Application");
-const Student = require("../models/Student");
 const Hostel = require("../models/Hostel");
 
 // @route   POST /api/applications
@@ -14,8 +13,10 @@ const createApplication = async (req, res) => {
       dateOfBirth,
       aadharCard,
       admissionReceipt,
-      studentPNR,
     } = req.body;
+
+    const studentDetails = req.user;
+    const studentPNR = studentDetails?.pnr;
 
     if (
       !hostelId ||
@@ -32,8 +33,7 @@ const createApplication = async (req, res) => {
       });
     }
 
-    const studentDetails = await Student.findOne({ pnr: studentPNR }).lean();
-    if (!studentDetails) {
+    if (!studentDetails || !studentPNR) {
       return res.status(404).json({
         success: false,
         message: "Student not found",
@@ -141,7 +141,7 @@ const getAllApplications = async (req, res) => {
 // @access  Private
 const getApplicationById = async (req, res) => {
   try {
-    const application = await Application.find({ studentPNR: req.params.id })
+    const application = await Application.findOne({ studentPNR: req.params.id })
       .populate("hostelId")
       .populate("studentId");
 
@@ -230,7 +230,7 @@ const deleteApplication = async (req, res) => {
     // Check if student owns this application
     if (
       application.studentId.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      !["admin", "superadmin"].includes(req.user.role)
     ) {
       return res.status(403).json({
         success: false,

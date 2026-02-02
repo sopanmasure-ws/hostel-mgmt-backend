@@ -2,8 +2,8 @@ const Student = require('../models/Student');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = ({ id, role, type }) => {
+  return jwt.sign({ id, role, type }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
@@ -43,7 +43,7 @@ const register = async (req, res) => {
       ...rest,
     });
 
-    const token = generateToken(student._id);
+    const token = generateToken({ id: student._id, role: student.role, type: 'student' });
 
     return res.status(201).json({
       success: true,
@@ -94,7 +94,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(student._id);
+    const token = generateToken({ id: student._id, role: student.role, type: 'student' });
 
     return res.status(200).json({
       success: true,
@@ -115,11 +115,12 @@ const login = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    const student = await Student.findById(req.user.id);
+    // `protect` attaches the Student document as `req.user`
+    const student = req.user;
 
     return res.status(200).json({
       success: true,
-      user: student.toJSON(),
+      user: student ? student.toJSON() : null,
     });
   } catch (error) {
     return res.status(500).json({

@@ -16,18 +16,21 @@ const router = express.Router();
 // Student routes
 router.post(
   '/',
+  protect,
+  authorize('student'),
   upload.fields([
     { name: 'aadharCard', maxCount: 1 },
     { name: 'admissionReceipt', maxCount: 1 },
   ]),
   createApplication
 );
-router.get('/my-applications', getMyApplications);
+router.get('/my-applications', protect, authorize('student'), getMyApplications);
 
 // Admin routes
-router.get('/', getAllApplications);
-router.get('/:id', getApplicationById);
-router.put('/:id', updateApplicationStatus);
-router.delete('/:id', deleteApplication);
-router.get('/hostel/:hostelId', getApplicationsByHostel);
+router.get('/hostel/:hostelId', protect, authorize('admin', 'superadmin'), getApplicationsByHostel);
+router.get('/', protect, authorize('admin', 'superadmin'), getAllApplications);
+router.get('/:id', protect, authorize('admin', 'superadmin'), getApplicationById);
+router.put('/:id', protect, authorize('admin', 'superadmin'), updateApplicationStatus);
+// Allow students to cancel their own application; allow admin/superadmin as well
+router.delete('/:id', protect, authorize('student', 'admin', 'superadmin'), deleteApplication);
 module.exports = router;
