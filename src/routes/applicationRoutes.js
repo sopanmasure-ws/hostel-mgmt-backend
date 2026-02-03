@@ -29,7 +29,7 @@ router.get('/my-applications', protect, authorize('student'), getMyApplications)
 // Admin routes
 router.get('/hostel/:hostelId', protect, authorize('admin', 'superadmin'), getApplicationsByHostel);
 router.get('/', protect, authorize('admin', 'superadmin'), getAllApplications);
-router.get('/:id', protect, authorize('admin', 'superadmin'), getApplicationById);
+router.get('/:id', protect, authorize('student', 'admin', 'superadmin'), getApplicationById);
 router.put('/:id', protect, authorize('admin', 'superadmin'), updateApplicationStatus);
 // Allow students to cancel their own application; allow admin/superadmin as well
 router.delete('/:id', protect, authorize('student', 'admin', 'superadmin'), deleteApplication);

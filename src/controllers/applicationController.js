@@ -152,6 +152,14 @@ const getApplicationById = async (req, res) => {
       });
     }
 
+    // If user is a student, ensure they can only view their own application
+    if (req.user.role === 'student' && req.user.pnr !== application.studentPNR) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this application",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       application,
