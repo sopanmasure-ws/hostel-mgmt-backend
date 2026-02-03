@@ -146,6 +146,16 @@ const getApplicationById = async (req, res) => {
       .populate("studentId");
 
     if (!application) {
+      // If the requesting user is a student checking their own PNR, return success with message
+      if (req.user.role === 'student' && req.user.pnr === req.params.id) {
+        return res.status(200).json({
+          success: true,
+          message: "Student hasn't applied for any hostel yet",
+          application: null,
+        });
+      }
+      
+      // For admin/superadmin or student checking other PNR, return 404
       return res.status(404).json({
         success: false,
         message: "Application not found",
