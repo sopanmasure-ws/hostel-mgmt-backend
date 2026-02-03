@@ -65,6 +65,15 @@ const studentSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isBlacklisted: {
+      type: Boolean,
+      default: false,
+    },
+    assignedRoom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Room',
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

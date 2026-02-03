@@ -73,6 +73,9 @@ const protect = async (req, res, next) => {
 
 const authorize = (...roles) => {
   return (req, res, next) => {
+    if (req.user && req.user.role === 'superadmin') {
+      return next();
+    }
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
