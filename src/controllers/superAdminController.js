@@ -723,17 +723,18 @@ const changeHostelAdmin = async (req, res) => {
 
         const oldAdminId = hostel.adminId;
 
+        // Use atomic operations to prevent race conditions
         // Remove from old admin's hostelIds
         await Admin.updateOne(
             { _id: oldAdminId },
             { $pull: { hostelIds: hostel._id } }
         );
 
-        // Add to new admin's hostelIds
-        if (!newAdmin.hostelIds.includes(hostel._id)) {
-            newAdmin.hostelIds.push(hostel._id);
-            await newAdmin.save();
-        }
+        // Add to new admin's hostelIds using $addToSet to avoid duplicates
+        await Admin.updateOne(
+            { _id: newAdmin._id },
+            { $addToSet: { hostelIds: hostel._id } }
+        );
 
         // Update hostel
         hostel.adminId = newAdmin._id;
