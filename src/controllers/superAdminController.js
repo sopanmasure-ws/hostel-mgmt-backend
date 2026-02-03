@@ -184,7 +184,7 @@ const disableAdmin = async (req, res) => {
     try {
         const { adminId } = req.params;
 
-        const admin = await Admin.findOne({ adminId });
+        const admin = await Admin.findOne({ _id: adminId });
         if (!admin) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
@@ -210,7 +210,7 @@ const enableAdmin = async (req, res) => {
     try {
         const { adminId } = req.params;
 
-        const admin = await Admin.findOne({ adminId });
+        const admin = await Admin.findOne({ _id: adminId });
         if (!admin) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
@@ -279,7 +279,7 @@ const deleteAdmin = async (req, res) => {
     try {
         const { adminId } = req.params;
 
-        const admin = await Admin.findOne({ adminId });
+        const admin = await Admin.findOne({ _id: adminId });
         if (!admin) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
