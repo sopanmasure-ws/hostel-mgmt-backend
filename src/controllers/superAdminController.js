@@ -701,10 +701,10 @@ const enableHostel = async (req, res) => {
 const changeHostelAdmin = async (req, res) => {
     try {
         const { hostelId } = req.params;
-        const { newAdminId } = req.body;
+        const { adminId } = req.body;
 
-        if (!newAdminId) {
-            return res.status(400).json({ success: false, message: 'Please provide newAdminId' });
+        if (!adminId) {
+            return res.status(400).json({ success: false, message: 'Please provide adminId' });
         }
 
         const hostel = await Hostel.findById(hostelId);
@@ -712,7 +712,7 @@ const changeHostelAdmin = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Hostel not found' });
         }
 
-        const newAdmin = await Admin.findOne({ adminId: newAdminId });
+        const newAdmin = await Admin.findOne({ adminId: adminId });
         if (!newAdmin) {
             return res.status(404).json({ success: false, message: 'New admin not found' });
         }
