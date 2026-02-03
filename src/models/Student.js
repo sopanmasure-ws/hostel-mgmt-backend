@@ -74,6 +74,18 @@ const studentSchema = new mongoose.Schema(
       ref: 'Room',
       default: null,
     },
+    roomNumber: {
+      type: String,
+      default: '',
+    },
+    floor: {
+      type: String,
+      default: '',
+    },
+    hostelName: {
+      type: String,
+      default: '',
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -83,17 +95,13 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-studentSchema.pre('save', async function (next) {
+studentSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  } catch (error) {
-    next(error);
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Method to compare passwords

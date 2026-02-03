@@ -352,8 +352,11 @@ const assignRoomToStudent = async (req, res) => {
         }
         await room.save();
 
-        // Update student
+        // Update student with room details and hostel name
         student.assignedRoom = room._id;
+        student.roomNumber = room.roomNumber;
+        student.floor = room.floor;
+        student.hostelName = hostel.name;
         await student.save();
 
         // Update application if exists

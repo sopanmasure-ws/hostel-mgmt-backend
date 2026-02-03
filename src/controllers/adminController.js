@@ -290,6 +290,19 @@ const acceptApplication = async (req, res) => {
     application.floor = floor;
     await application.save();
 
+    // Update student with room details and hostel name
+    const student = await Student.findById(application.studentId);
+    if (student) {
+      student.assignedRoom = room._id;
+      student.roomNumber = roomNumber;
+      student.floor = floor;
+      const hostel = await Hostel.findById(application.hostelId);
+      if (hostel) {
+        student.hostelName = hostel.name;
+      }
+      await student.save();
+    }
+
     // Update room
     room.assignedStudents.push(application.studentId);
     room.occupiedSpaces += 1;
