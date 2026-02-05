@@ -14,6 +14,8 @@ const {
     getStudentDetails,
     assignRoomToStudent,
     changeStudentRoom,
+    removeStudentFromRoom,
+    reassignStudentRoom,
     rejectStudentApplication,
     blacklistStudent,
     unblacklistStudent,
@@ -53,6 +55,8 @@ router.get('/students', listStudents);
 router.get('/students/:pnr', getStudentDetails);
 router.put('/students/:pnr/assign-room', assignRoomToStudent);
 router.put('/students/:pnr/change-room', changeStudentRoom);
+router.put('/students/:pnr/removeStudentFromRoom', removeStudentFromRoom);
+router.put('/students/:pnr/reassign-room', reassignStudentRoom);
 router.put('/students/:pnr/reject-application', rejectStudentApplication);
 router.put('/students/:pnr/blacklist', blacklistStudent);
 router.put('/students/:pnr/unblacklist', unblacklistStudent);

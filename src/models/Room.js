@@ -37,6 +37,22 @@ const roomSchema = new mongoose.Schema(
         ref: 'Student',
       },
     ],
+    studentDetails: [
+      {
+        studentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Student',
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        pnr: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     notes: {
       type: String,
       default: '',

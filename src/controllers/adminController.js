@@ -296,6 +296,7 @@ const acceptApplication = async (req, res) => {
       student.assignedRoom = room._id;
       student.roomNumber = roomNumber;
       student.floor = floor;
+      student.applicationStatus = 'APPROVED';
       const hostel = await Hostel.findById(application.hostelId);
       if (hostel) {
         student.hostelName = hostel.name;
@@ -303,8 +304,19 @@ const acceptApplication = async (req, res) => {
       await student.save();
     }
 
-    // Update room
+    // Update room with student reference and details
     room.assignedStudents.push(application.studentId);
+    
+    // Add student details to room's studentDetails array
+    if (!room.studentDetails) {
+      room.studentDetails = [];
+    }
+    room.studentDetails.push({
+      studentId: application.studentId,
+      name: student.name,
+      pnr: student.pnr,
+    });
+    
     room.occupiedSpaces += 1;
     if (room.occupiedSpaces === room.capacity) {
       room.status = 'filled';

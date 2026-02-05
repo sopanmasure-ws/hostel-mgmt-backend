@@ -46,7 +46,7 @@ const applicationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'],
+      enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'DISALLOWCATED'],
       default: 'PENDING',
     },
     appliedOn: {
@@ -58,6 +58,10 @@ const applicationSchema = new mongoose.Schema(
       default: null,
     },
     rejectionReason: {
+      type: String,
+      default: '',
+    },
+    remarks: {
       type: String,
       default: '',
     },

@@ -596,6 +596,243 @@ const changeStudentRoom = async (req, res) => {
     }
 };
 
+const reassignStudentRoom = async (req, res) => {
+    try {
+        const { pnr } = req.params;
+        const { hostelId, roomId, remark } = req.body || {};
+
+        if (!hostelId || !roomId) {
+            return res.status(400).json({ success: false, message: 'Please provide hostelId and roomId' });
+        }
+
+        const student = await Student.findOne({ pnr });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found' });
+        }
+
+        if (student.isBlacklisted) {
+            return res.status(400).json({ success: false, message: 'Cannot assign room to blacklisted student' });
+        }
+
+        const hostel = await Hostel.findById(hostelId);
+        if (!hostel) {
+            return res.status(404).json({ success: false, message: 'Hostel not found' });
+        }
+
+        const newRoom = await Room.findById(roomId);
+        if (!newRoom) {
+            return res.status(404).json({ success: false, message: 'Room not found' });
+        }
+
+        if (newRoom.hostelId.toString() !== hostelId) {
+            return res.status(400).json({ success: false, message: 'Room does not belong to this hostel' });
+        }
+
+        if (newRoom.occupiedSpaces >= newRoom.capacity) {
+            return res.status(400).json({ success: false, message: 'Room is full' });
+        }
+
+        if (student.assignedRoom && student.assignedRoom.toString() === newRoom._id.toString()) {
+            return res.status(400).json({ success: false, message: 'Student is already assigned to this room' });
+        }
+
+        const note = remark && String(remark).trim()
+            ? String(remark).trim()
+            : 'Student room reassigned by admin';
+
+        // Release old room if any
+        if (student.assignedRoom) {
+            const oldRoom = await Room.findById(student.assignedRoom);
+            if (oldRoom) {
+                oldRoom.assignedStudents = oldRoom.assignedStudents.filter(
+                    (id) => id.toString() !== student._id.toString(),
+                );
+
+                if (Array.isArray(oldRoom.studentDetails)) {
+                    oldRoom.studentDetails = oldRoom.studentDetails.filter(
+                        (detail) => {
+                            const detailId = detail.studentId ? detail.studentId.toString() : '';
+                            return detailId !== student._id.toString() && detail.pnr !== student.pnr;
+                        },
+                    );
+                }
+
+                oldRoom.occupiedSpaces = Math.max(0, oldRoom.occupiedSpaces - 1);
+                if (oldRoom.occupiedSpaces === 0) {
+                    oldRoom.status = 'empty';
+                }
+                await oldRoom.save();
+
+                // Update old hostel availability if different
+                if (oldRoom.hostelId.toString() !== hostel._id.toString()) {
+                    const oldHostel = await Hostel.findById(oldRoom.hostelId);
+                    if (oldHostel) {
+                        const availableRoomsOldHostel = await Room.countDocuments({
+                            hostelId: oldHostel._id,
+                            $expr: { $lt: ['$occupiedSpaces', '$capacity'] },
+                            status: { $in: ['empty', 'filled'] },
+                        });
+                        oldHostel.availableRooms = availableRoomsOldHostel;
+                        await oldHostel.save();
+                    }
+                }
+            }
+        }
+
+        // Assign new room
+        const alreadyInRoom = newRoom.assignedStudents.some(
+            (id) => id.toString() === student._id.toString(),
+        );
+        if (!alreadyInRoom) {
+            newRoom.assignedStudents.push(student._id);
+            newRoom.occupiedSpaces += 1;
+        }
+
+        if (!Array.isArray(newRoom.studentDetails)) {
+            newRoom.studentDetails = [];
+        }
+        const detailsExists = newRoom.studentDetails.some(
+            (detail) => detail.pnr === student.pnr,
+        );
+        if (!detailsExists) {
+            newRoom.studentDetails.push({
+                studentId: student._id,
+                name: student.name,
+                pnr: student.pnr,
+            });
+        }
+
+        if (newRoom.occupiedSpaces >= newRoom.capacity) {
+            newRoom.status = 'filled';
+        } else if (newRoom.status === 'empty') {
+            newRoom.status = 'filled';
+        }
+        await newRoom.save();
+
+        // Update student
+        student.assignedRoom = newRoom._id;
+        student.roomNumber = newRoom.roomNumber;
+        student.floor = newRoom.floor;
+        student.hostelName = hostel.name;
+        student.applicationStatus = 'APPROVED';
+        student.remarks = note;
+        await student.save();
+
+        // Update application if exists
+        const application = await Application.findOne({ studentId: student._id });
+        if (application) {
+            application.status = 'APPROVED';
+            application.roomNumber = newRoom.roomNumber;
+            application.floor = newRoom.floor;
+            application.approvedOn = new Date();
+            application.remarks = note;
+            await application.save();
+        }
+
+        // Update hostel availability
+        const availableRoomsNewHostel = await Room.countDocuments({
+            hostelId: hostel._id,
+            $expr: { $lt: ['$occupiedSpaces', '$capacity'] },
+            status: { $in: ['empty', 'filled'] },
+        });
+        hostel.availableRooms = availableRoomsNewHostel;
+        await hostel.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Room reassigned successfully',
+            data: { student, room: newRoom, application },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const removeStudentFromRoom = async (req, res) => {
+    try {
+        const { pnr } = req.params;
+        const { remark } = req.body || {};
+
+        const student = await Student.findOne({ pnr });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found' });
+        }
+
+        if (!student.assignedRoom) {
+            return res.status(400).json({ success: false, message: 'Student has no assigned room' });
+        }
+
+        const note = remark && String(remark).trim()
+            ? String(remark).trim()
+            : 'Student is removed from room by admin';
+
+        // Update room
+        const room = await Room.findById(student.assignedRoom);
+        if (room) {
+            room.assignedStudents = room.assignedStudents.filter(
+                (id) => id.toString() !== student._id.toString(),
+            );
+
+            if (Array.isArray(room.studentDetails)) {
+                room.studentDetails = room.studentDetails.filter(
+                    (detail) => {
+                        const detailId = detail.studentId ? detail.studentId.toString() : '';
+                        return detailId !== student._id.toString() && detail.pnr !== student.pnr;
+                    },
+                );
+            }
+
+            room.occupiedSpaces = Math.max(0, room.occupiedSpaces - 1);
+            if (room.occupiedSpaces === 0) {
+                room.status = 'empty';
+            }
+            await room.save();
+        }
+
+        // Update student
+        student.assignedRoom = null;
+        student.roomNumber = '';
+        student.floor = '';
+        student.hostelName = '';
+        student.applicationStatus = 'DISALLOWCATED';
+        student.remarks = note;
+        await student.save();
+
+        // Update application
+        const application = await Application.findOne({ studentId: student._id });
+        if (application) {
+            application.status = 'DISALLOWCATED';
+            application.roomNumber = '';
+            application.floor = '';
+            application.approvedOn = null;
+            application.remarks = note;
+            await application.save();
+        }
+
+        // Update hostel availability if room exists
+        if (room && room.hostelId) {
+            const hostel = await Hostel.findById(room.hostelId);
+            if (hostel) {
+                const availableRooms = await Room.countDocuments({
+                    hostelId: hostel._id,
+                    $expr: { $lt: ['$occupiedSpaces', '$capacity'] },
+                    status: { $in: ['empty', 'filled'] },
+                });
+                hostel.availableRooms = availableRooms;
+                await hostel.save();
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Student removed from room successfully',
+            data: { student, room, application },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 const rejectStudentApplication = async (req, res) => {
     try {
         const { pnr } = req.params;
@@ -1035,6 +1272,8 @@ module.exports = {
     getStudentDetails,
     assignRoomToStudent,
     changeStudentRoom,
+    removeStudentFromRoom,
+    reassignStudentRoom,
     rejectStudentApplication,
     blacklistStudent,
     unblacklistStudent,
