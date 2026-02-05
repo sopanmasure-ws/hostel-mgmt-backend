@@ -3,6 +3,7 @@ const { protect, authorize } = require('../middleware/auth');
 const {
     overview,
     dashboardData,
+    detailedDashboard,
     createAdmin,
     listAdmins,
     getAdminDetails,
@@ -37,6 +38,7 @@ router.use(protect, authorize('superadmin'));
 // Dashboard/overview
 router.get('/dashboard/overview', overview);
 router.get('/dashboard/data', dashboardData);
+router.get('/dashboard/detailed', detailedDashboard);
 
 // Admin management
 router.post('/admins', createAdmin);

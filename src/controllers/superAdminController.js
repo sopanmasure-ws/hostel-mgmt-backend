@@ -3,6 +3,14 @@ const Student = require('../models/Student');
 const Hostel = require('../models/Hostel');
 const Room = require('../models/Room');
 const Application = require('../models/Application');
+
+// Simple in-memory cache
+let dashboardCache = {
+    data: null,
+    timestamp: null,
+    ttl: 5 * 60 * 1000, // 5 minutes cache
+};
+
 const overview = async (req, res) => {
     try {
         const [admins, students, hostels, rooms, applications] = await Promise.all([
@@ -44,6 +52,92 @@ const dashboardData = async (req, res) => {
                 students,
                 hostels,
             },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const detailedDashboard = async (req, res) => {
+    try {
+        // Check cache
+        const now = Date.now();
+        const forceRefresh = req.query.refresh === 'true';
+        
+        if (!forceRefresh && dashboardCache.data && dashboardCache.timestamp && (now - dashboardCache.timestamp < dashboardCache.ttl)) {
+            return res.status(200).json({
+                success: true,
+                cached: true,
+                cacheAge: Math.floor((now - dashboardCache.timestamp) / 1000),
+                data: dashboardCache.data,
+            });
+        }
+
+        // Fetch all data in parallel
+        const [
+            totalStudents,
+            totalAdmins,
+            totalHostels,
+            totalRooms,
+            occupiedRooms,
+            availableRooms,
+            pendingApplications,
+            approvedApplications,
+            rejectedApplications,
+            blacklistedStudents,
+        ] = await Promise.all([
+            Student.find({}).sort({ createdAt: -1 }),
+            Admin.find({}).sort({ createdAt: -1 }).populate('hostelIds'),
+            Hostel.find({}).sort({ createdAt: -1 }).populate('adminId', 'name email adminId'),
+            Room.find({}).sort({ floor: 1, roomNumber: 1 }).populate('hostelId', 'name location'),
+            Room.find({ occupiedSpaces: { $gt: 0 } }).sort({ floor: 1, roomNumber: 1 }).populate('hostelId', 'name location').populate('assignedStudents', 'name pnr email'),
+            Room.find({ $expr: { $lt: ['$occupiedSpaces', '$capacity'] }, status: { $in: ['empty', 'filled'] } }).sort({ floor: 1, roomNumber: 1 }).populate('hostelId', 'name location'),
+            Application.find({ status: 'PENDING' }).sort({ appliedOn: -1 }).populate('studentId', 'name pnr email gender year').populate('hostelId', 'name location'),
+            Application.find({ status: 'APPROVED' }).sort({ approvedOn: -1 }).populate('studentId', 'name pnr email gender year').populate('hostelId', 'name location'),
+            Application.find({ status: 'REJECTED' }).sort({ updatedAt: -1 }).populate('studentId', 'name pnr email gender year').populate('hostelId', 'name location'),
+            Student.find({ isBlacklisted: true }).sort({ createdAt: -1 }),
+        ]);
+
+        const dashboardData = {
+            totalStudentsCount: totalStudents.length,
+            totalStudents,
+            
+            totalAdminsCount: totalAdmins.length,
+            totalAdmins,
+            
+            totalHostelsCount: totalHostels.length,
+            totalHostels,
+            
+            totalRoomsCount: totalRooms.length,
+            totalRooms,
+            
+            occupiedRoomsCount: occupiedRooms.length,
+            occupiedRooms,
+            
+            availableRoomsCount: availableRooms.length,
+            availableRooms,
+            
+            pendingApplicationsCount: pendingApplications.length,
+            pendingApplications,
+            
+            approvedApplicationsCount: approvedApplications.length,
+            approvedApplications,
+            
+            rejectedApplicationsCount: rejectedApplications.length,
+            rejectedApplications,
+            
+            blacklistedStudentsCount: blacklistedStudents.length,
+            blacklistedStudents,
+        };
+
+        // Update cache
+        dashboardCache.data = dashboardData;
+        dashboardCache.timestamp = now;
+
+        return res.status(200).json({
+            success: true,
+            cached: false,
+            data: dashboardData,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -955,4 +1049,5 @@ module.exports = {
     changeRoomStatus,
     createSuperAdmin,
     dashboardData,
+    detailedDashboard,
 };
