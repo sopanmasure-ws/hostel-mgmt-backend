@@ -96,7 +96,7 @@ const getMyApplications = async (req, res) => {
     if (!applications) {
       return res.status(200).json({
         success: true,
-        message: "No applications found",
+        message: "Student hasn't applied for any hostel yet",
         application: null,
       });
     }

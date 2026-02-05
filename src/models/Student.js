@@ -86,6 +86,11 @@ const studentSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    applicationStatus: {
+      type: String,
+      enum: ['APPROVED', 'PENDING', 'REJECTED', 'CANCELLED', 'NOT_APPLIED'],
+      default: 'NOT_APPLIED',
+    },
     createdAt: {
       type: Date,
       default: Date.now,

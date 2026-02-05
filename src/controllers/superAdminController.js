@@ -385,6 +385,123 @@ const assignRoomToStudent = async (req, res) => {
     }
 };
 
+const changeStudentRoom = async (req, res) => {
+    try {
+        const { pnr } = req.params;
+        const { hostelId, roomId } = req.body;
+
+        if (!hostelId || !roomId) {
+            return res.status(400).json({ success: false, message: 'Please provide hostelId and roomId' });
+        }
+
+        const student = await Student.findOne({ pnr });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found' });
+        }
+
+        if (!student.assignedRoom) {
+            return res.status(400).json({ success: false, message: 'Student has no assigned room' });
+        }
+
+        const application = await Application.findOne({ studentId: student._id });
+        if (!application || (application.status || '').toUpperCase() !== 'APPROVED') {
+            return res.status(400).json({ success: false, message: 'Student does not have an approved application' });
+        }
+
+        const hostel = await Hostel.findById(hostelId);
+        if (!hostel) {
+            return res.status(404).json({ success: false, message: 'Hostel not found' });
+        }
+
+        const newRoom = await Room.findById(roomId);
+        if (!newRoom) {
+            return res.status(404).json({ success: false, message: 'Room not found' });
+        }
+
+        if (newRoom.hostelId.toString() !== hostelId) {
+            return res.status(400).json({ success: false, message: 'Room does not belong to this hostel' });
+        }
+
+        if (newRoom.occupiedSpaces >= newRoom.capacity) {
+            return res.status(400).json({ success: false, message: 'Room is full' });
+        }
+
+        if (student.assignedRoom.toString() === newRoom._id.toString()) {
+            return res.status(400).json({ success: false, message: 'Student is already assigned to this room' });
+        }
+
+        // Release old room
+        const oldRoom = await Room.findById(student.assignedRoom);
+        if (oldRoom) {
+            oldRoom.assignedStudents = oldRoom.assignedStudents.filter(
+                (id) => id.toString() !== student._id.toString(),
+            );
+            oldRoom.occupiedSpaces = Math.max(0, oldRoom.occupiedSpaces - 1);
+            if (oldRoom.occupiedSpaces === 0) {
+                oldRoom.status = 'empty';
+            }
+            await oldRoom.save();
+        }
+
+        // Assign new room
+        if (!newRoom.assignedStudents.some((id) => id.toString() === student._id.toString())) {
+            newRoom.assignedStudents.push(student._id);
+        }
+        newRoom.occupiedSpaces += 1;
+        if (newRoom.occupiedSpaces >= newRoom.capacity) {
+            newRoom.status = 'filled';
+        } else if (newRoom.status === 'empty') {
+            newRoom.status = 'filled';
+        }
+        await newRoom.save();
+
+        // Update student
+        student.assignedRoom = newRoom._id;
+        student.roomNumber = newRoom.roomNumber;
+        student.floor = newRoom.floor;
+        student.hostelName = hostel.name;
+        student.applicationStatus = 'APPROVED';
+        await student.save();
+
+        // Update application
+        application.hostelId = hostel._id;
+        application.roomNumber = newRoom.roomNumber;
+        application.floor = newRoom.floor;
+        await application.save();
+
+        // Update hostel available rooms (count rooms with available spaces)
+        const availableRoomsNewHostel = await Room.countDocuments({
+            hostelId: hostel._id,
+            $expr: { $lt: ['$occupiedSpaces', '$capacity'] },
+            status: { $in: ['empty', 'filled'] },
+        });
+        hostel.availableRooms = availableRoomsNewHostel;
+        await hostel.save();
+
+        // If old room was in a different hostel, update that hostel availability too
+        if (oldRoom && oldRoom.hostelId.toString() !== hostel._id.toString()) {
+            const oldHostel = await Hostel.findById(oldRoom.hostelId);
+            if (oldHostel) {
+                const availableRoomsOldHostel = await Room.countDocuments({
+                    hostelId: oldHostel._id,
+                    $expr: { $lt: ['$occupiedSpaces', '$capacity'] },
+                    status: { $in: ['empty', 'filled'] },
+                });
+                oldHostel.availableRooms = availableRoomsOldHostel;
+                await oldHostel.save();
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Room changed successfully',
+            data: { student, room: newRoom },
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 const rejectStudentApplication = async (req, res) => {
     try {
         const { pnr } = req.params;
@@ -823,6 +940,7 @@ module.exports = {
     listStudents,
     getStudentDetails,
     assignRoomToStudent,
+    changeStudentRoom,
     rejectStudentApplication,
     blacklistStudent,
     unblacklistStudent,
