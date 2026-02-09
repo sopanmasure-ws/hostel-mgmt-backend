@@ -13,13 +13,15 @@ connectDB();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-app.use(cors({
-  origin: '*',
-  credentials: false
-}));
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5174',
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://hostel-mgmt-frontend.vercel.app',
+    'https://hostel-mgmt-frontend-ltkb.vercel.app',
+    process.env.CORS_ORIGIN,
+  ].filter(Boolean),
   credentials: true,
   optionsSuccessStatus: 200,
 };
