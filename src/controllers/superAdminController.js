@@ -927,11 +927,84 @@ const listHostels = async (req, res) => {
             .sort({ createdAt: -1 })
             .populate('adminId', 'name email adminId phone');
 
+        // Enrich each hostel with room statistics
+        const enrichedHostels = await Promise.all(
+            hostels.map(async (hostel) => {
+                const hostelId = hostel._id;
+
+                // Get all rooms for this hostel
+                const allRooms = await Room.find({ hostelId }).lean();
+
+                // Calculate overall statistics
+                const stats = {
+                    totalRooms: allRooms.length,
+                    available: 0,
+                    occupied: 0,
+                    damaged: 0,
+                    underMaintenance: 0,
+                };
+
+                // Group rooms by floor and calculate per-floor stats
+                const floorStats = {};
+
+                allRooms.forEach((room) => {
+                    // Overall statistics
+                    if (room.status === 'damaged') {
+                        stats.damaged++;
+                    } else if (room.status === 'maintenance') {
+                        stats.underMaintenance++;
+                    } else if (room.occupiedSpaces > 0 && room.occupiedSpaces < room.capacity) {
+                        // Partially occupied
+                        stats.occupied++;
+                    } else if (room.occupiedSpaces === room.capacity) {
+                        // Fully occupied
+                        stats.occupied++;
+                    } else if (room.occupiedSpaces === 0) {
+                        // Empty
+                        stats.available++;
+                    }
+
+                    // Per-floor statistics
+                    const floorName = room.floor;
+                    if (!floorStats[floorName]) {
+                        floorStats[floorName] = {
+                            totalRooms: 0,
+                            available: 0,
+                            occupied: 0,
+                            damaged: 0,
+                            underMaintenance: 0,
+                        };
+                    }
+
+                    floorStats[floorName].totalRooms++;
+
+                    if (room.status === 'damaged') {
+                        floorStats[floorName].damaged++;
+                    } else if (room.status === 'maintenance') {
+                        floorStats[floorName].underMaintenance++;
+                    } else if (room.occupiedSpaces > 0 && room.occupiedSpaces < room.capacity) {
+                        floorStats[floorName].occupied++;
+                    } else if (room.occupiedSpaces === room.capacity) {
+                        floorStats[floorName].occupied++;
+                    } else if (room.occupiedSpaces === 0) {
+                        floorStats[floorName].available++;
+                    }
+                });
+
+                // Convert hostel to object and add statistics
+                const hostelObj = hostel.toObject ? hostel.toObject() : hostel;
+                hostelObj.roomStatistics = stats;
+                hostelObj.floorStatistics = floorStats;
+
+                return hostelObj;
+            })
+        );
+
         return res.status(200).json({
             success: true,
             data: {
-                total: hostels.length,
-                hostels,
+                total: enrichedHostels.length,
+                hostels: enrichedHostels,
             },
         });
     } catch (error) {
