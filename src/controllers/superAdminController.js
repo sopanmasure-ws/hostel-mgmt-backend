@@ -1210,7 +1210,7 @@ const changeRoomStatus = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide status' });
         }
 
-        const validStatuses = ['empty', 'filled', 'damaged', 'maintenance'];
+        const validStatuses = ['empty', 'filled', 'damaged', 'maintenance','available'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ 
                 success: false, 
