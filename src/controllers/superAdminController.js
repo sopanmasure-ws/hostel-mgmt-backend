@@ -451,6 +451,7 @@ const assignRoomToStudent = async (req, res) => {
         student.roomNumber = room.roomNumber;
         student.floor = room.floor;
         student.hostelName = hostel.name;
+        student.applicationStatus = 'APPROVED';
         await student.save();
 
         // Update application if exists
@@ -855,6 +856,9 @@ const rejectStudentApplication = async (req, res) => {
         application.status = 'REJECTED';
         application.rejectionReason = reason || 'Rejected by superadmin';
         await application.save();
+
+        student.applicationStatus = 'REJECTED';
+        await student.save();
 
         return res.status(200).json({
             success: true,

@@ -207,14 +207,16 @@ const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    const normalizedStatus = status.toUpperCase();
+
     let application = await Application.findByIdAndUpdate(
       req.params.id,
       {
-        status,
+        status: normalizedStatus,
         roomNumber: roomNumber || "",
         floor: floor || "",
         rejectionReason: rejectionReason || "",
-        approvedOn: status === "APPROVED" ? new Date() : null,
+        approvedOn: normalizedStatus === "APPROVED" ? new Date() : null,
       },
       { new: true, runValidators: true },
     );
@@ -225,6 +227,12 @@ const updateApplicationStatus = async (req, res) => {
         message: "Application not found",
       });
     }
+
+    await Student.findByIdAndUpdate(
+      application.studentId,
+      { applicationStatus: normalizedStatus },
+      { new: true },
+    );
 
     return res.status(200).json({
       success: true,

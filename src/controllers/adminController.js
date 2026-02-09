@@ -381,6 +381,13 @@ const rejectApplication = async (req, res) => {
     application.rejectionReason = rejectionReason;
     await application.save();
 
+    // Update student application status
+    const student = await Student.findById(application.studentId);
+    if (student) {
+      student.applicationStatus = 'REJECTED';
+      await student.save();
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Application rejected successfully',
