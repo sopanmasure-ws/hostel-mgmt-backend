@@ -1,5 +1,6 @@
 const Application = require("../models/Application");
 const Hostel = require("../models/Hostel");
+const Student = require("../models/Student");
 
 // @route   POST /api/applications
 // @desc    Submit hostel application
@@ -70,6 +71,13 @@ const createApplication = async (req, res) => {
       aadharCard: aadharCard,
       admissionReceipt: admissionReceipt,
     });
+
+    // Update student's applicationStatus to PENDING
+    await Student.findByIdAndUpdate(
+      studentDetails._id,
+      { applicationStatus: 'PENDING' },
+      { new: true }
+    );
 
     return res.status(201).json({
       success: true,
