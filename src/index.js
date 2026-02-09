@@ -14,12 +14,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use(cors({
-  origin: [
-    'https://hostel-mgmt-frontend.vercel.app',
-    'http://localhost:5173',  // for local development
-    'http://localhost:5174'
-  ],
-  credentials: true,
+  origin: '*',
+  credentials: false
 }));
 // CORS configuration
 const corsOptions = {
