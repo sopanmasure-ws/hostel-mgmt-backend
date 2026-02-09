@@ -15,9 +15,9 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use(cors({
   origin: [
-    'http://localhost:5174',           // local dev (Vite)
-    'http://localhost:3000',
-    'https://hostel-management-fe.netlify.app'
+    'https://hostel-mgmt-frontend.vercel.app',
+    'http://localhost:5173',  // for local development
+    'http://localhost:5174'
   ],
   credentials: true,
 }));
