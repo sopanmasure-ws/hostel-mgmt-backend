@@ -28,7 +28,7 @@ const roomSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['empty', 'filled', 'damaged', 'maintenance'],
+      enum: ['available', 'empty', 'filled', 'damaged', 'maintenance'],
       default: 'empty',
     },
     assignedStudents: [
