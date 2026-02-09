@@ -441,7 +441,24 @@ const assignRoomToStudent = async (req, res) => {
         // Update room
         room.assignedStudents.push(student._id);
         room.occupiedSpaces += 1;
+
+        if (!Array.isArray(room.studentDetails)) {
+            room.studentDetails = [];
+        }
+        const detailsExists = room.studentDetails.some(
+            (detail) => detail.pnr === student.pnr,
+        );
+        if (!detailsExists) {
+            room.studentDetails.push({
+                studentId: student._id,
+                name: student.name,
+                pnr: student.pnr,
+            });
+        }
+
         if (room.occupiedSpaces >= room.capacity) {
+            room.status = 'filled';
+        } else if (room.status === 'empty') {
             room.status = 'filled';
         }
         await room.save();
