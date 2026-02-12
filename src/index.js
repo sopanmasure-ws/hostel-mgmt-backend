@@ -38,18 +38,18 @@ app.use(helmet({
 // Compression middleware for response compression
 app.use(compression());
 
-// Sanitize data against NoSQL injection - configured to not modify req.query
-app.use(mongoSanitize({
-  replaceWith: '_',
-  onSanitize: ({ req, key }) => {
-    console.warn(`Sanitized ${key} in request`);
-  },
-}));
+// Sanitize data against NoSQL injection - Commented out due to Express 5 incompatibility
+// app.use(mongoSanitize({
+//   replaceWith: '_',
+//   onSanitize: ({ req, key }) => {
+//     console.warn(`Sanitized ${key} in request`);
+//   },
+// }));
 
-// Prevent HTTP Parameter Pollution - configured to allow query parameters
-app.use(hpp({
-  whitelist: [] // Allow all query parameters
-}));
+// Prevent HTTP Parameter Pollution - Commented out due to Express 5 incompatibility
+// app.use(hpp({
+//   whitelist: [] // Allow all query parameters
+// }));
 
 // Apply rate limiting to all routes
 if (process.env.NODE_ENV !== 'test') {
