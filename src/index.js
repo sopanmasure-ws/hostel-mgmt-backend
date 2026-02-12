@@ -35,31 +35,16 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(apiLimiter);
 app.use(speedLimiter);
 
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://hostel-mgmt-frontend.vercel.app',
-      process.env.CORS_ORIGIN,
-    ].filter(Boolean);
-    
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin) || process.env.CORS_ORIGIN === '*') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// CORS configuration - Allow all origins for maximum compatibility
+app.use(cors({
+  origin: true, // Reflects the request origin
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-};
-app.use(cors(corsOptions));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-JSON'],
+  maxAge: 86400, // 24 hours
+}));
 
 // Apply rate limiting to all routes
 if (process.env.NODE_ENV !== 'test') {
