@@ -7,7 +7,7 @@ const compression = require('compression');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const connectDB = require('./config/database');
-const { apiLimiter, speedLimiter } = require('./middleware/rateLimiter');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -44,10 +44,9 @@ app.use(mongoSanitize());
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// Apply rate limiting to all routes (only once)
+// Apply rate limiting to all routes
 if (process.env.NODE_ENV !== 'test') {
   app.use(apiLimiter);
-  app.use(speedLimiter);
 }
 
 // Serve uploaded files
