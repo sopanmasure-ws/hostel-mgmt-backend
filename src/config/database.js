@@ -15,6 +15,9 @@ const connectDB = async () => {
 
     await mongoose.connect(mongoURI, options);
 
+    // Disable automatic index creation to prevent errors
+    mongoose.set('autoIndex', false);
+
     // Enable query logging in development
     if (process.env.NODE_ENV === 'development') {
       mongoose.set('debug', true);
