@@ -2,16 +2,38 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const compression = require('compression');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 const connectDB = require('./config/database');
+const { apiLimiter, speedLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
 // Connect to database
 connectDB();
 
-// Middleware
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Compression middleware for response compression
+app.use(compression());
+
+// Sanitize data against NoSQL injection
+app.use(mongoSanitize());
+
+// Prevent HTTP Parameter Pollution
+app.use(hpp());
+
+// Body parser with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(apiLimiter);
+app.use(speedLimiter);
 
 // CORS configuration
 const corsOptions = {
@@ -26,6 +48,12 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
+// Apply rate limiting to all routes
+if (process.env.NODE_ENV !== 'test') {
+  app.use(apiLimiter);
+  app.use(speedLimiter);
+}
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));

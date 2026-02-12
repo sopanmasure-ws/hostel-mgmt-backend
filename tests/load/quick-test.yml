@@ -1,0 +1,38 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    # Quick stress test - 5 minutes
+    - duration: 60
+      arrivalRate: 100
+      name: "Quick ramp up"
+    
+    - duration: 180
+      arrivalRate: 1000
+      name: "Peak load - 1000 req/sec"
+    
+    - duration: 60
+      arrivalRate: 50
+      name: "Cool down"
+  
+  http:
+    timeout: 10
+    pool: 50
+
+scenarios:
+  - name: "Mixed Load Test"
+    weight: 100
+    flow:
+      # Health check
+      - get:
+          url: "/"
+      
+      # Get hostels (should be fast due to caching)
+      - get:
+          url: "/api/hostels"
+      
+      # Login attempt
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@example.com"
+            password: "password123"

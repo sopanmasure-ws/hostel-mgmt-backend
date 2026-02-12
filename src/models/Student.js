@@ -125,4 +125,12 @@ studentSchema.methods.toJSON = function () {
   return student;
 };
 
+// Indexes for performance optimization (email and pnr already have unique: true in schema)
+studentSchema.index({ assignedRoom: 1 });
+studentSchema.index({ applicationStatus: 1 });
+studentSchema.index({ isActive: 1, isBlacklisted: 1 });
+studentSchema.index({ year: 1, gender: 1 });
+studentSchema.index({ hostelName: 1, roomNumber: 1 });
+studentSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Student', studentSchema);

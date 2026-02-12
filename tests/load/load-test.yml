@@ -1,0 +1,117 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    # Warm-up phase - Gradually increase load
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    
+    # Ramp up - Increase to 500 req/sec
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 500
+      name: "Ramp up to 500 req/sec"
+    
+    # Sustained load - Maintain 1000 req/sec
+    - duration: 180
+      arrivalRate: 1000
+      name: "Sustained peak load - 1000 req/sec"
+    
+    # Spike test - Test burst handling
+    - duration: 60
+      arrivalRate: 2000
+      name: "Spike test - 2000 req/sec"
+    
+    # Cool down
+    - duration: 60
+      arrivalRate: 100
+      name: "Cool down"
+  
+  # HTTP settings
+  http:
+    timeout: 10
+    pool: 50 # Connection pool size
+  
+  # Performance metrics
+  ensure:
+    maxErrorRate: 1 # Max 1% error rate
+    p95: 2000 # 95th percentile response time under 2 seconds
+    p99: 3000 # 99th percentile response time under 3 seconds
+  
+  # Load test plugins
+  plugins:
+    expect: {}
+
+scenarios:
+  # Test health check endpoint
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+            - contentType: json
+
+  # Test student authentication
+  - name: "Student Login"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "student@test.com"
+            password: "password123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: [200, 401]
+
+  # Test GET hostels
+  - name: "Get Hostels"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/hostels"
+          expect:
+            - statusCode: 200
+            - contentType: json
+
+  # Test GET applications with auth
+  - name: "Get Applications"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@test.com"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "adminToken"
+      - get:
+          url: "/api/applications"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+          expect:
+            - statusCode: [200, 401]
+
+  # Test superadmin dashboard (cached endpoint)
+  - name: "Dashboard Data"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/admin/login"
+          json:
+            adminId: "SUPERADMIN"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "superToken"
+      - get:
+          url: "/api/superadmin/dashboard"
+          headers:
+            Authorization: "Bearer {{ superToken }}"
+          expect:
+            - statusCode: [200, 401]

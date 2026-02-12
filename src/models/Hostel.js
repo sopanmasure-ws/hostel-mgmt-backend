@@ -73,4 +73,11 @@ const hostelSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for performance optimization (name already has unique: true in schema)
+hostelSchema.index({ adminId: 1 });
+hostelSchema.index({ gender: 1, isActive: 1 });
+hostelSchema.index({ location: 1 });
+hostelSchema.index({ createdAt: -1 });
+hostelSchema.index({ availableRooms: 1 });
+
 module.exports = mongoose.model('Hostel', hostelSchema);

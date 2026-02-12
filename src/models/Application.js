@@ -84,4 +84,11 @@ const applicationSchema = new mongoose.Schema(
 // Ensure one application per student
 applicationSchema.index({ studentId: 1 }, { unique: true });
 
+// Additional indexes for performance
+applicationSchema.index({ hostelId: 1, status: 1 });
+applicationSchema.index({ status: 1, appliedOn: -1 });
+applicationSchema.index({ studentYear: 1 });
+applicationSchema.index({ approvedOn: -1 });
+applicationSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Application', applicationSchema);

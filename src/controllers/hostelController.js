@@ -7,7 +7,14 @@ const Room = require('../models/Room');
 // @access  Public
 const getAllHostels = async (req, res) => {
   try {
-    const hostels = await Hostel.find({ isActive: true });
+    const query = { isActive: true };
+    
+    // Filter by gender if provided
+    if (req.query.gender) {
+      query.gender = req.query.gender;
+    }
+    
+    const hostels = await Hostel.find(query);
 
     return res.status(200).json({
       success: true,

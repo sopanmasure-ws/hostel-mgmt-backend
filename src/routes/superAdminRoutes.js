@@ -38,8 +38,8 @@ router.post('/superadmins', createSuperAdmin);
 router.use(protect, authorize('superadmin'));
 
 // Dashboard/overview
-router.get('/dashboard/overview', overview);
-router.get('/dashboard/data', dashboardData);
+router.get('/overview', overview);
+router.get('/dashboard', dashboardData);
 router.get('/dashboard/detailed', detailedDashboard);
 
 // Admin management

@@ -14,8 +14,10 @@ const canAccessHostel = (user, hostelId) => {
 
 // Generate JWT Token
 const generateToken = ({ id, role, type }) => {
-  return jwt.sign({ id, role, type }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
+  const secret = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing-only-12345678';
+  const expire = process.env.JWT_EXPIRE || '7d';
+  return jwt.sign({ id, role, type }, secret, {
+    expiresIn: expire,
   });
 };
 

@@ -272,6 +272,14 @@ const deleteApplication = async (req, res) => {
       });
     }
 
+    // Prevent deletion of approved applications
+    if (application.status === "APPROVED") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete an approved application",
+      });
+    }
+
     await Application.findByIdAndDelete(req.params.id);
 
     return res.status(200).json({

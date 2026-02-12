@@ -17,7 +17,8 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secret = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing-only-12345678';
+    const decoded = jwt.verify(token, secret);
 
     // Prefer explicit token type, but fall back for older tokens.
     let user = null;

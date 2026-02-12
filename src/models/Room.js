@@ -72,4 +72,11 @@ const roomSchema = new mongoose.Schema(
 // Compound index to ensure unique room per hostel
 roomSchema.index({ hostelId: 1, roomNumber: 1 }, { unique: true });
 
+// Additional indexes for performance
+roomSchema.index({ hostelId: 1, floor: 1 });
+roomSchema.index({ status: 1 });
+roomSchema.index({ occupiedSpaces: 1, capacity: 1 });
+roomSchema.index({ assignedStudents: 1 });
+roomSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Room', roomSchema);

@@ -79,4 +79,8 @@ adminSchema.methods.toJSON = function () {
   return admin;
 };
 
+// Indexes for performance optimization (email and adminId already have unique: true in schema)
+adminSchema.index({ role: 1, isActive: 1 });
+adminSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Admin', adminSchema);
