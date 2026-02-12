@@ -14,6 +14,21 @@ const app = express();
 // Connect to database
 connectDB();
 
+// CORS configuration - Must be first to handle preflight requests
+app.use(cors({
+  origin: true, // Reflects the request origin
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-JSON'],
+  maxAge: 86400, // 24 hours
+}));
+
+// Body parser with size limits - Must be before other middleware that need parsed body
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -29,24 +44,7 @@ app.use(mongoSanitize());
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// Body parser with size limits
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(apiLimiter);
-app.use(speedLimiter);
-
-// CORS configuration - Allow all origins for maximum compatibility
-app.use(cors({
-  origin: true, // Reflects the request origin
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['Content-Length', 'X-JSON'],
-  maxAge: 86400, // 24 hours
-}));
-
-// Apply rate limiting to all routes
+// Apply rate limiting to all routes (only once)
 if (process.env.NODE_ENV !== 'test') {
   app.use(apiLimiter);
   app.use(speedLimiter);
