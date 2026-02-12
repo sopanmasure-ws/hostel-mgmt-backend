@@ -39,9 +39,6 @@ app.use(speedLimiter);
 const corsOptions = {
   origin: [
     'http://localhost:5173',
-    'http://localhost:3000',
-    'https://hostel-mgmt-frontend.vercel.app',
-    'https://hostel-mgmt-frontend-ltkb.vercel.app',
     process.env.CORS_ORIGIN,
   ].filter(Boolean),
   credentials: true,
