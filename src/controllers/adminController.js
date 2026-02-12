@@ -3,23 +3,10 @@ const Hostel = require('../models/Hostel');
 const Application = require('../models/Application');
 const Room = require('../models/Room');
 const Student = require('../models/Student');
-const jwt = require('jsonwebtoken');
-
-const canAccessHostel = (user, hostelId) => {
-  if (!user) return false;
-  if (user.role === 'superadmin') return true;
-  if (!Array.isArray(user.hostelIds)) return false;
-  return user.hostelIds.map((id) => id.toString()).includes(hostelId.toString());
-};
-
-// Generate JWT Token
-const generateToken = ({ id, role, type }) => {
-  const secret = process.env.JWT_SECRET || 'test-jwt-secret-key-for-testing-only-12345678';
-  const expire = process.env.JWT_EXPIRE || '7d';
-  return jwt.sign({ id, role, type }, secret, {
-    expiresIn: expire,
-  });
-};
+const { generateToken } = require('../utils/jwt');
+const { sendSuccess, sendError, validationError, unauthorizedError, forbiddenError, notFoundError } = require('../utils/response');
+const { validateRequiredFields } = require('../utils/validators');
+const { canAccessHostel, validatePasswordMatch, calculateRoomStats, createSeatMap } = require('../utils/adminHelpers');
 
 // @route   POST /api/admin/register
 // @desc    Register a new admin
@@ -29,28 +16,23 @@ const register = async (req, res) => {
     const { name, email, adminId, password, confirmPassword, phone } = req.body;
 
     // Validation
-    if (!name || !email || !adminId || !password || !confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide all required fields',
-      });
+    const validation = validateRequiredFields(
+      { name, email, adminId, password, confirmPassword },
+      ['name', 'email', 'adminId', 'password', 'confirmPassword']
+    );
+    if (!validation.valid) {
+      return validationError(res, `${validation.missing} is required`);
     }
 
     // Check if passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Passwords do not match',
-      });
+    if (!validatePasswordMatch(password, confirmPassword)) {
+      return validationError(res, 'Passwords do not match');
     }
 
     // Check if admin already exists
     let admin = await Admin.findOne({ $or: [{ email }, { adminId }] });
     if (admin) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email or Admin ID already exists',
-      });
+      return validationError(res, 'Email or Admin ID already exists');
     }
 
     // Create admin
@@ -65,19 +47,12 @@ const register = async (req, res) => {
 
     const token = generateToken({ id: admin._id, role: admin.role, type: 'admin' });
 
-    return res.status(201).json({
-      success: true,
-      message: 'Admin registered successfully',
-      data: {
-        admin: admin.toJSON(),
-        token,
-      },
+    return sendSuccess(res, 201, 'Admin registered successfully', {
+      admin: admin.toJSON(),
+      token,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return sendError(res, 500, error.message);
   }
 };
 
@@ -414,19 +389,13 @@ const getHostelInventory = async (req, res) => {
     const { floor, status } = req.query;
 
     if (!canAccessHostel(req.user, hostelId)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this hostel',
-      });
+      return forbiddenError(res, 'Not authorized to access this hostel');
     }
 
     // Verify hostel exists
     const hostel = await Hostel.findById(hostelId);
     if (!hostel) {
-      return res.status(404).json({
-        success: false,
-        message: 'Hostel not found',
-      });
+      return notFoundError(res, 'Hostel not found');
     }
 
     let query = { hostelId };
@@ -443,57 +412,21 @@ const getHostelInventory = async (req, res) => {
       .populate('assignedStudents', 'name email pnr gender year')
       .sort({ floor: 1, roomNumber: 1 });
 
-    // Calculate stats
-    const totalRooms = rooms.length;
-    const emptyRooms = rooms.filter((r) => r.status === 'empty').length;
-    const filledRooms = rooms.filter((r) => r.status === 'filled').length;
-    const damagedRooms = rooms.filter((r) => r.status === 'damaged').length;
-    const maintenanceRooms = rooms.filter((r) => r.status === 'maintenance').length;
-    const totalCapacity = rooms.reduce((sum, room) => sum + room.capacity, 0);
-    const totalOccupied = rooms.reduce((sum, room) => sum + room.occupiedSpaces, 0);
+    // Calculate stats and create seat map
+    const stats = calculateRoomStats(rooms);
+    const seatMap = createSeatMap(rooms);
 
-    // Group by floor for seat map
-    const seatMap = {};
-    rooms.forEach((room) => {
-      if (!seatMap[room.floor]) {
-        seatMap[room.floor] = [];
-      }
-      seatMap[room.floor].push({
-        roomNumber: room.roomNumber,
-        capacity: room.capacity,
-        occupiedSpaces: room.occupiedSpaces,
-        status: room.status,
-        assignedStudents: room.assignedStudents,
-      });
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Inventory retrieved successfully',
-      data: {
-        hostel: {
-          id: hostel._id,
-          name: hostel.name,
-        },
-        stats: {
-          totalRooms,
-          emptyRooms,
-          filledRooms,
-          damagedRooms,
-          maintenanceRooms,
-          totalCapacity,
-          totalOccupied,
-          availableSpaces: totalCapacity - totalOccupied,
-        },
-        rooms,
-        seatMap,
+    return sendSuccess(res, 200, 'Inventory retrieved successfully', {
+      hostel: {
+        id: hostel._id,
+        name: hostel.name,
       },
+      stats,
+      rooms,
+      seatMap,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return sendError(res, 500, error.message);
   }
 };
 

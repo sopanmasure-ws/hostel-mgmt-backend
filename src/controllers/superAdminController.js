@@ -3,12 +3,17 @@ const Student = require('../models/Student');
 const Hostel = require('../models/Hostel');
 const Room = require('../models/Room');
 const Application = require('../models/Application');
+const { sendSuccess, sendError, validationError, notFoundError, unauthorizedError, forbiddenError, serverError } = require("../utils/response");
+const { validateRequiredFields, validateEmail, validatePassword, validateObjectId } = require("../utils/validators");
+const { generateToken, verifyToken } = require("../utils/jwt");
+const { canAccessHostel, validatePasswordMatch, calculateRoomStats, createSeatMap } = require("../utils/adminHelpers");
+const { ROLES, APPLICATION_STATUS, CACHE_TTL } = require("../constants");
 
 // Simple in-memory cache
 let dashboardCache = {
     data: null,
     timestamp: null,
-    ttl: 5 * 60 * 1000, // 5 minutes cache
+    ttl: CACHE_TTL, // 5 minutes cache
 };
 
 const overview = async (req, res) => {

@@ -1,6 +1,7 @@
 const Hostel = require('../models/Hostel');
 const Admin = require('../models/Admin');
 const Room = require('../models/Room');
+const { sendSuccess, sendError, notFoundError, serverError } = require("../utils/response");
 
 // @route   GET /api/hostels
 // @desc    Get all hostels

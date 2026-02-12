@@ -1,0 +1,2585 @@
+{
+  "info": {
+    "name": "Hostel Management System - Complete API Collection",
+    "description": "Complete REST API collection with automated token management and test scripts\n\n**Features:**\n- All 55 API endpoints with sample requests\n- Automated token extraction and environment variable management\n- Pre-request scripts for authentication\n- Test scripts for response validation\n- Sample data for all endpoints\n\n**Setup:**\n1. Import this collection in Postman\n2. Create environment with variables:\n   - base_url: http://localhost:5000/api\n   - student_token, admin_token, superadmin_token (auto-populated)\n   - student_pnr, admin_id, hostel_id, room_id, application_id (auto-populated)\n\n**Usage:**\n- Run 'Create SuperAdmin' first to get superadmin access\n- Use 'Register Student' or 'Register Admin' to create users\n- Tokens are automatically saved after login/register\n- Run collection with Collection Runner for automated testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "hostel-mgmt-2026-v2",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{current_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script for all requests",
+          "console.log('Request: ' + pm.info.requestName);",
+          "",
+          "// Set base URL if not exists",
+          "if (!pm.environment.get('base_url')) {",
+          "    pm.environment.set('base_url', 'http://localhost:5000/api');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for all responses",
+          "pm.test('Response time is less than 2000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});",
+          "",
+          "pm.test('Response has correct Content-Type', function () {",
+          "    pm.response.to.have.header('Content-Type');",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "student_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "superadmin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "student_pnr",
+      "value": "PNR12345",
+      "type": "string"
+    },
+    {
+      "key": "admin_id",
+      "value": "ADMIN001",
+      "type": "string"
+    },
+    {
+      "key": "superadmin_id",
+      "value": "SUPERADMIN001",
+      "type": "string"
+    },
+    {
+      "key": "hostel_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "application_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Setup",
+      "description": "Initial setup and authentication endpoints",
+      "item": [
+        {
+          "name": "Create SuperAdmin (Run First)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response status",
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Parse response",
+                  "const response = pm.response.json();",
+                  "",
+                  "// Test response structure",
+                  "pm.test('Response has success property', function () {",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "});",
+                  "",
+                  "pm.test('Response contains admin data', function () {",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.have.property('admin');",
+                  "});",
+                  "",
+                  "// Save superadmin token",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('superadmin_token', response.data.token);",
+                  "    pm.environment.set('current_token', response.data.token);",
+                  "    console.log('SuperAdmin token saved:', response.data.token.substring(0, 20) + '...');",
+                  "}",
+                  "",
+                  "// Save superadmin ID",
+                  "if (response.data && response.data.admin && response.data.admin.adminId) {",
+                  "    pm.environment.set('superadmin_id', response.data.admin.adminId);",
+                  "    console.log('SuperAdmin ID saved:', response.data.admin.adminId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"superadmin@hostel.com\",\n  \"adminId\": \"SUPERADMIN001\",\n  \"password\": \"SuperAdmin@123\",\n  \"confirmPassword\": \"SuperAdmin@123\",\n  \"phone\": \"9876543210\",\n  \"passKey\": \"ONLYFORSUPERADMINCREATION\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/superadmins",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "superadmins"]
+            },
+            "description": "Creates the first superadmin. Run this first to get superadmin access."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Response contains token', function () {",
+                  "    pm.expect(response.data).to.have.property('token');",
+                  "});",
+                  "",
+                  "// Save student token and PNR",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('student_token', response.data.token);",
+                  "    pm.environment.set('current_token', response.data.token);",
+                  "    console.log('Student token saved');",
+                  "}",
+                  "",
+                  "if (response.data && response.data.user && response.data.user.pnr) {",
+                  "    pm.environment.set('student_pnr', response.data.user.pnr);",
+                  "    console.log('Student PNR saved:', response.data.user.pnr);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@student.com\",\n  \"pnr\": \"PNR12345\",\n  \"password\": \"Student@123\",\n  \"gender\": \"male\",\n  \"year\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new student account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Login successful', function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.have.property('token');",
+                  "});",
+                  "",
+                  "// Auto-save student token",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('student_token', response.data.token);",
+                  "    pm.environment.set('current_token', response.data.token);",
+                  "    console.log('Student token saved');",
+                  "}",
+                  "",
+                  "if (response.data && response.data.user && response.data.user.pnr) {",
+                  "    pm.environment.set('student_pnr', response.data.user.pnr);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@student.com\",\n  \"password\": \"Student@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use student token",
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('student_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User data returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use superadmin token",
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "// Save admin token",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('admin_token', response.data.token);",
+                  "    console.log('Admin token saved');",
+                  "}",
+                  "",
+                  "if (response.data && response.data.admin && response.data.admin.adminId) {",
+                  "    pm.environment.set('admin_id', response.data.admin.adminId);",
+                  "    console.log('Admin ID saved:', response.data.admin.adminId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@hostel.com\",\n  \"adminId\": \"ADMIN001\",\n  \"password\": \"Admin@123\",\n  \"confirmPassword\": \"Admin@123\",\n  \"phone\": \"9876543211\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/register",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "// Save admin token",
+                  "if (response.data && response.data.token) {",
+                  "    pm.environment.set('admin_token', response.data.token);",
+                  "    pm.environment.set('current_token', response.data.token);",
+                  "    console.log('Admin token saved');",
+                  "}",
+                  "",
+                  "if (response.data && response.data.admin && response.data.admin.adminId) {",
+                  "    pm.environment.set('admin_id', response.data.admin.adminId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminId\": \"ADMIN001\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Hostel Management (Public)",
+      "description": "Public hostel information endpoints",
+      "item": [
+        {
+          "name": "Get All Hostels",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Response contains hostels array', function () {",
+                  "    pm.expect(response.data).to.have.property('hostels');",
+                  "    pm.expect(response.data.hostels).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Save first hostel ID if available",
+                  "if (response.data && response.data.hostels && response.data.hostels.length > 0) {",
+                  "    pm.environment.set('hostel_id', response.data.hostels[0]._id);",
+                  "    console.log('Hostel ID saved:', response.data.hostels[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hostels",
+              "host": ["{{base_url}}"],
+              "path": ["hostels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hostel by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Hostel details returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('hostel');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hostels/{{hostel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["hostels", "{{hostel_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Student Applications",
+      "description": "Student hostel application management",
+      "item": [
+        {
+          "name": "Create Application",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('student_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Application created successfully', function () {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response).to.have.property('application');",
+                  "});",
+                  "",
+                  "// Save application ID",
+                  "if (response.application && response.application._id) {",
+                  "    pm.environment.set('application_id', response.application._id);",
+                  "    console.log('Application ID saved:', response.application._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostelId\": \"{{hostel_id}}\",\n  \"branch\": \"Computer Science\",\n  \"caste\": \"General\",\n  \"dateOfBirth\": \"2005-05-15\",\n  \"aadharCard\": \"1234-5678-9012\",\n  \"admissionReceipt\": \"ADM2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/applications",
+              "host": ["{{base_url}}"],
+              "path": ["applications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Applications",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('student_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/applications/my-applications",
+              "host": ["{{base_url}}"],
+              "path": ["applications", "my-applications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Applications (Admin)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Applications list returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('applications');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/applications",
+              "host": ["{{base_url}}"],
+              "path": ["applications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Application Status",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Application updated', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["applications", "{{application_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Application",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('student_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/applications/{{application_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["applications", "{{application_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Operations",
+      "description": "Admin hostel and room management",
+      "item": [
+        {
+          "name": "Get Admin Hostels",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/{{admin_id}}/hostels",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "{{admin_id}}", "hostels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hostel Applications",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/hostels/{{hostel_id}}/applications",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "hostels", "{{hostel_id}}", "applications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Application",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomNumber\": \"101\",\n  \"floor\": \"1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/applications/{{application_id}}/APPROVED",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "applications", "{{application_id}}", "APPROVED"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hostel Inventory",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Inventory stats returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('stats');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/hostels/{{hostel_id}}/inventory",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "hostels", "{{hostel_id}}", "inventory"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hostel Rooms",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "// Save first room ID",
+                  "if (response.data && response.data.rooms && response.data.rooms.length > 0) {",
+                  "    pm.environment.set('room_id', response.data.rooms[0]._id);",
+                  "    console.log('Room ID saved:', response.data.rooms[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/hostels/{{hostel_id}}/rooms",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "hostels", "{{hostel_id}}", "rooms"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Room Status",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('admin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"maintenance\",\n  \"notes\": \"Room under repair - plumbing issues\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}/update-status",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "rooms", "{{room_id}}", "update-status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. SuperAdmin - Dashboard",
+      "description": "SuperAdmin dashboard and overview endpoints",
+      "item": [
+        {
+          "name": "Get System Overview",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Overview data returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('counts');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/overview",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "overview"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Data",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "dashboard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Detailed Dashboard",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Detailed stats returned', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('totalStudentsCount');",
+                  "    pm.expect(response.data).to.have.property('totalHostelsCount');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/dashboard/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "dashboard", "detailed"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. SuperAdmin - Admin Management",
+      "description": "Admin user CRUD operations",
+      "item": [
+        {
+          "name": "Create Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Admin User\",\n  \"email\": \"newadmin@hostel.com\",\n  \"adminId\": \"ADMIN002\",\n  \"password\": \"Admin@123\",\n  \"confirmPassword\": \"Admin@123\",\n  \"phone\": \"9876543212\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Admins",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Details",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins/{{admin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins", "{{admin_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins/{{admin_id}}/disable",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins", "{{admin_id}}", "disable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enable Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins/{{admin_id}}/enable",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins", "{{admin_id}}", "enable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/admins/ADMIN002",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "admins", "ADMIN002"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. SuperAdmin - Student Management",
+      "description": "Student management and room operations",
+      "item": [
+        {
+          "name": "Get All Students",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/students",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student Details",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Room to Student",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{room_id}}\",\n  \"hostelId\": \"{{hostel_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/assign-room",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "assign-room"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Student Room",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{room_id}}\",\n  \"hostelId\": \"{{hostel_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/change-room",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "change-room"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Student from Room",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostelId\": \"{{hostel_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/removeStudentFromRoom",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "removeStudentFromRoom"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reassign Room to Student",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{room_id}}\",\n  \"hostelId\": \"{{hostel_id}}\",\n  \"remark\": \"Administrative reassignment due to maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/reassign-room",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "reassign-room"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Student Application",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete documentation provided\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/reject-application",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "reject-application"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Blacklist Student",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Disciplinary action - repeated hostel rule violations\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/blacklist",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "blacklist"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unblacklist Student",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/students/{{student_pnr}}/unblacklist",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "students", "{{student_pnr}}", "unblacklist"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. SuperAdmin - Hostel Management",
+      "description": "Hostel CRUD and management operations",
+      "item": [
+        {
+          "name": "Get All Hostels",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.hostels && response.data.hostels.length > 0) {",
+                  "    pm.environment.set('hostel_id', response.data.hostels[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hostel Details",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Hostel",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.hostel && response.data.hostel._id) {",
+                  "    pm.environment.set('hostel_id', response.data.hostel._id);",
+                  "    console.log('New Hostel ID saved:', response.data.hostel._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Boys Hostel A\",\n  \"location\": \"Main Campus, Building A\",\n  \"capacity\": 200,\n  \"gender\": \"male\",\n  \"adminId\": \"{{admin_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Hostel",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Boys Hostel A - Updated\",\n  \"location\": \"Main Campus, Building A - Renovated\",\n  \"capacity\": 250\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Hostel",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable Hostel",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}/disable",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}", "disable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enable Hostel",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}/enable",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}", "enable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Hostel Admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminId\": \"ADMIN002\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}/change-admin",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}", "change-admin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Room Status",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({",
+                  "    key: 'Authorization',",
+                  "    value: 'Bearer ' + pm.environment.get('superadmin_token')",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{superadmin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/superadmin/hostels/{{hostel_id}}/rooms/{{room_id}}/change-status",
+              "host": ["{{base_url}}"],
+              "path": ["superadmin", "hostels", "{{hostel_id}}", "rooms", "{{room_id}}", "change-status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
